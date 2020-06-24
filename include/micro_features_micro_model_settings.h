@@ -33,13 +33,7 @@ constexpr int kFeatureElementCount = (kFeatureSliceSize * kFeatureSliceCount);
 constexpr int kFeatureSliceStrideMs = 20;
 constexpr int kFeatureSliceDurationMs = 30;
 
-// 1 sample @ 16000 Hz -> 1 / 16000 = 0.0001 seconds in length
-// Slice Duration of 30 ms -> (30 / 1000) = 0.03 seconds in length
-// Number of samples in 1 slice = 0.03 / 0.0001 = 300 samples
-// Number of samples in 1 stride = 0.02 / 0.0001 = 200 samples per stride, hopped
-// 
-
-constexpr int kCategoryCount = 4;
+constexpr int kCategoryCount = 14;
 constexpr int kSilenceIndex = 0;
 constexpr int kUnknownIndex = 1;
 extern const char* kCategoryLabels[kCategoryCount];

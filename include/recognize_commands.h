@@ -18,11 +18,9 @@ limitations under the License.
 
 #include <cstdint>
 
-// #include "tensorflow/lite/c/c_api_internal.h"
-#include "micro_model_settings.h"
-// #include "tensorflow/lite/experimental/micro/micro_error_reporter.h"
-#include <tensorflow/lite/micro/micro_error_reporter.h>
-#include <tensorflow/lite/c/common.h>
+#include "tensorflow/lite/c/common.h"
+#include "micro_features_micro_model_settings.h"
+#include "tensorflow/lite/micro/micro_error_reporter.h"
 
 // Partial implementation of std::dequeue, just providing the functionality
 // that's needed to keep a record of previous neural network results over a
@@ -44,6 +42,11 @@ class PreviousResultsQueue {
         scores_[i] = scores[i];
       }
     }
+    Result(int32_t time, int8_t* scores) : time_(time) {
+      for (int i = 0; i < kCategoryCount; ++i) {
+        scores_[i] = (uint8_t) scores[i] + 128;
+      }
+    }
     int32_t time_;
     uint8_t scores_[kCategoryCount];
   };
@@ -61,12 +64,8 @@ class PreviousResultsQueue {
 
   void push_back(const Result& entry) {
     if (size() >= kMaxResults) {
-      // error_reporter_->Report(
-      //     "Couldn't push_back latest result, too many already!");
-      TF_LITE_REPORT_ERROR(
-          error_reporter_,
+      error_reporter_->Report(
           "Couldn't push_back latest result, too many already!");
-      
       return;
     }
     size_ += 1;
@@ -75,10 +74,7 @@ class PreviousResultsQueue {
 
   Result pop_front() {
     if (size() <= 0) {
-      // error_reporter_->Report("Couldn't pop_front result, none present!");
-      TF_LITE_REPORT_ERROR(error_reporter_,
-            "Couldn't pop_front result, none present!");
-    
+      error_reporter_->Report("Couldn't pop_front result, none present!");
       return Result();
     }
     Result result = front();
@@ -95,10 +91,7 @@ class PreviousResultsQueue {
   // queue.
   Result& from_front(int offset) {
     if ((offset < 0) || (offset >= size_)) {
-      // error_reporter_->Report("Attempt to read beyond the end of the queue!");
-      TF_LITE_REPORT_ERROR(error_reporter_,
-                           "Attempt to read beyond the end of the queue!");
-      
+      error_reporter_->Report("Attempt to read beyond the end of the queue!");
       offset = size_ - 1;
     }
     int index = front_index_ + offset;
@@ -141,7 +134,8 @@ class RecognizeCommands {
   // help reduce spurious recognitions.
   explicit RecognizeCommands(tflite::ErrorReporter* error_reporter,
                              int32_t average_window_duration_ms = 1000,
-                             uint8_t detection_threshold = 200,
+                             //  uint8_t detection_threshold = 100,
+                             uint8_t detection_threshold = 100,
                              int32_t suppression_ms = 1500,
                              int32_t minimum_count = 3);
 
