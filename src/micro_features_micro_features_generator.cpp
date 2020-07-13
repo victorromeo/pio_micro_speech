@@ -84,6 +84,15 @@ TfLiteStatus GenerateMicroFeatures(tflite::ErrorReporter* error_reporter,
   for (int i = 0; i < frontend_output.size; ++i) {
     // These scaling values are derived from those used in input_data.py in the
     // training pipeline.
+
+    // Converts using the equation
+    // y = (2550 * x) + 3328
+    //     ----------------
+    //           (6556)
+
+    // When x = 654.3, y = 255
+    // When x = -1.3,  y = 0
+
     constexpr int32_t value_scale = (10 * 255);
     constexpr int32_t value_div = (256 * 26);
     int32_t value =
@@ -95,7 +104,9 @@ TfLiteStatus GenerateMicroFeatures(tflite::ErrorReporter* error_reporter,
     if (value > 255) {
       value = 255;
     }
-    output[i] = value;
+
+    // Input tensor expects values 0.0 to 26.0
+    output[i] = (uint8_t) value * (260.0 / (255 * 10));
   }
 
   return kTfLiteOk;
