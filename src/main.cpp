@@ -124,7 +124,7 @@ void setup() {
   // that will provide the inputs to the neural network.
   // NOLINTNEXTLINE(runtime-global-variables)
   static FeatureProvider static_feature_provider(kFeatureElementCount,
-                                                 model_input->data.uint8);
+                                                 model_input->data.int8);
   feature_provider = &static_feature_provider;
 
   static RecognizeCommands static_recognizer(error_reporter);
@@ -138,12 +138,14 @@ void loop() {
   // Fetch the spectrogram for the current time.
   const int32_t current_time = LatestAudioTimestamp();
   int how_many_new_slices = 0;
+  error_reporter->Report("f");
   TfLiteStatus feature_status = feature_provider->PopulateFeatureData(
       error_reporter, previous_time, current_time, &how_many_new_slices);
   if (feature_status != kTfLiteOk) {
     error_reporter->Report("Feature generation failed");
     return;
   }
+  error_reporter->Report("F");
   previous_time = current_time;
   // If no new audio samples have been received since last time, don't bother
   // running the network model.
@@ -151,12 +153,14 @@ void loop() {
     return;
   }
 
+  error_reporter->Report("i"); // Mark inference successful
   // Run the model on the spectrogram input and make sure it succeeds.
   TfLiteStatus invoke_status = interpreter->Invoke();
   if (invoke_status != kTfLiteOk) {
     error_reporter->Report("Invoke failed");
     return;
   }
+  error_reporter->Report("I"); // Mark inference successful
 
   // Obtain a pointer to the output tensor
   TfLiteTensor* output = interpreter->output(0);

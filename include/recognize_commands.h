@@ -36,19 +36,19 @@ class PreviousResultsQueue {
   // Data structure that holds an inference result, and the time when it
   // was recorded.
   struct Result {
-    Result() : time_(0), scores_() {}
-    Result(int32_t time, uint8_t* scores) : time_(time) {
+    Result() : time_(0), scores() {}
+    Result(int32_t time, int8_t* input_scores) : time_(time) {
       for (int i = 0; i < kCategoryCount; ++i) {
-        scores_[i] = scores[i];
+        scores[i] = input_scores[i];
       }
     }
-    Result(int32_t time, int8_t* scores) : time_(time) {
+    Result(int32_t time, uint8_t* input_scores) : time_(time) {
       for (int i = 0; i < kCategoryCount; ++i) {
-        scores_[i] = (uint8_t) scores[i] + 128;
+        scores[i] = (uint8_t) input_scores[i] - 128;
       }
     }
     int32_t time_;
-    uint8_t scores_[kCategoryCount];
+    int8_t scores[kCategoryCount];
   };
 
   int size() { return size_; }
@@ -64,17 +64,23 @@ class PreviousResultsQueue {
 
   void push_back(const Result& entry) {
     if (size() >= kMaxResults) {
-      error_reporter_->Report(
+      TF_LITE_REPORT_ERROR(
+          error_reporter_,
           "Couldn't push_back latest result, too many already!");
       return;
     }
     size_ += 1;
     back() = entry;
+
+    for (int i = 0; i < kCategoryCount; ++i) {
+      TF_LITE_REPORT_ERROR( error_reporter_, "Score %d: %d", i, entry.scores[i]);
+    }
   }
 
   Result pop_front() {
     if (size() <= 0) {
-      error_reporter_->Report("Couldn't pop_front result, none present!");
+      TF_LITE_REPORT_ERROR(error_reporter_,
+                           "Couldn't pop_front result, none present!");
       return Result();
     }
     Result result = front();
@@ -91,7 +97,8 @@ class PreviousResultsQueue {
   // queue.
   Result& from_front(int offset) {
     if ((offset < 0) || (offset >= size_)) {
-      error_reporter_->Report("Attempt to read beyond the end of the queue!");
+      TF_LITE_REPORT_ERROR(error_reporter_,
+                           "Attempt to read beyond the end of the queue!");
       offset = size_ - 1;
     }
     int index = front_index_ + offset;
@@ -139,7 +146,7 @@ class RecognizeCommands {
                              uint8_t detection_threshold = 100,
                              //int32_t suppression_ms = 1500,
                              int32_t suppression_ms = 500,
-                             int32_t minimum_count = 3);
+                             int32_t minimum_count = 1);
 
   // Call this with the results of running a model on sample data.
   TfLiteStatus ProcessLatestResults(const TfLiteTensor* latest_results,

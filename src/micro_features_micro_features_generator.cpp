@@ -69,7 +69,7 @@ void SetMicroFeaturesNoiseEstimates(const uint32_t* estimate_presets) {
 
 TfLiteStatus GenerateMicroFeatures(tflite::ErrorReporter* error_reporter,
                                    const int16_t* input, int input_size,
-                                   int output_size, uint8_t* output,
+                                   int output_size, int8_t* output,
                                    size_t* num_samples_read) {
   const int16_t* frontend_input;
   if (g_is_first_time) {
@@ -93,20 +93,19 @@ TfLiteStatus GenerateMicroFeatures(tflite::ErrorReporter* error_reporter,
     // When x = 654.3, y = 255
     // When x = -1.3,  y = 0
 
-    constexpr int32_t value_scale = (10 * 255);
-    constexpr int32_t value_div = (256 * 26);
+    constexpr int32_t value_scale = 256;
+    constexpr int32_t value_div = static_cast<int32_t>((25.6f * 26.0f) + 0.5f);
     int32_t value =
         ((frontend_output.values[i] * value_scale) + (value_div / 2)) /
         value_div;
-    if (value < 0) {
-      value = 0;
+    value -= 128;
+    if (value < -128) {
+      value = -128;
     }
-    if (value > 255) {
-      value = 255;
+    if (value > 127) {
+      value = 127;
     }
-
-    // Input tensor expects values 0.0 to 26.0
-    output[i] = (uint8_t) value * (260.0 / (255 * 10));
+    output[i] = value;
   }
 
   return kTfLiteOk;
