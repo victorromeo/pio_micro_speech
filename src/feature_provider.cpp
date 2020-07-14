@@ -19,7 +19,7 @@ limitations under the License.
 #include "micro_features_micro_features_generator.h"
 #include "micro_features_micro_model_settings.h"
 
-#define FORCE_YES
+#define FORCE_NO
 
 #ifdef FORCE_NO
   #include "micro_features_no_micro_features_data.h"
