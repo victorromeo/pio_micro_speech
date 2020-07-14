@@ -19,7 +19,7 @@ limitations under the License.
 #include "micro_features_micro_features_generator.h"
 #include "micro_features_micro_model_settings.h"
 
-// #define FORCE_NO
+#define FORCE_YES
 
 #ifdef FORCE_NO
   #include "micro_features_no_micro_features_data.h"
@@ -132,7 +132,7 @@ TfLiteStatus FeatureProvider::PopulateFeatureData(
       //  extern const int g_yes_micro_f2e59fea_nohash_1_height;
       //  extern const signed char g_yes_micro_f2e59fea_nohash_1_data[];
       
-        TF_LITE_REPORT_ERROR(error_reporter, "Forcing YES...");
+        //TF_LITE_REPORT_ERROR(error_reporter, "Forcing YES...");
         for (int i = 0; i < feature_size_; ++i) {
           feature_data_[i] = g_yes_micro_f2e59fea_nohash_1_data[i];
         }
@@ -148,7 +148,7 @@ TfLiteStatus FeatureProvider::PopulateFeatureData(
       //  extern const int g_yes_micro_f2e59fea_nohash_1_height;
       //  extern const signed char g_yes_micro_f2e59fea_nohash_1_data[];
       
-        TF_LITE_REPORT_ERROR(error_reporter, "Forcing NO...");
+       // TF_LITE_REPORT_ERROR(error_reporter, "Forcing NO...");
         for (int i = 0; i < feature_size_; ++i) {
           feature_data_[i] = g_no_micro_f9643d42_nohash_4_data[i];
         }
