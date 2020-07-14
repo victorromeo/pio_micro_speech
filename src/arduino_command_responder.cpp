@@ -24,7 +24,6 @@ void RespondToCommand(tflite::ErrorReporter* error_reporter,
                       uint8_t score, bool is_new_command) {
   static bool is_initialized = false;
   if (!is_initialized) {
-    pinMode(LED_BUILTIN, OUTPUT);
     // Pins for the built-in RGB LEDs on the Arduino Nano 33 BLE Sense
     pinMode(LEDR, OUTPUT);
     pinMode(LEDG, OUTPUT);
@@ -62,7 +61,6 @@ void RespondToCommand(tflite::ErrorReporter* error_reporter,
   if (last_command_time != 0) {
     if (last_command_time < (current_time - 3000)) {
       last_command_time = 0;
-      digitalWrite(LED_BUILTIN, LOW);
       digitalWrite(LEDR, HIGH);
       digitalWrite(LEDG, HIGH);
       digitalWrite(LEDB, HIGH);
@@ -71,11 +69,5 @@ void RespondToCommand(tflite::ErrorReporter* error_reporter,
     return;
   }
 
-  // Otherwise, toggle the LED every time an inference is performed.
-  ++count;
-  if (count & 1) {
-    digitalWrite(LED_BUILTIN, HIGH);
-  } else {
-    digitalWrite(LED_BUILTIN, LOW);
-  }
+
 }

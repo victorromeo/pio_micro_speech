@@ -42,6 +42,7 @@ tflite::ErrorReporter* error_reporter = nullptr;
 const tflite::Model* model = nullptr;
 tflite::MicroInterpreter* interpreter = nullptr;
 TfLiteTensor* model_input = nullptr;
+TfLiteTensor* model_output = nullptr;
 FeatureProvider* feature_provider = nullptr;
 RecognizeCommands* recognizer = nullptr;
 int32_t previous_time = 0;
@@ -61,6 +62,9 @@ void setup() {
   // NOLINTNEXTLINE(runtime-global-variables)
   static tflite::MicroErrorReporter micro_error_reporter;
   error_reporter = &micro_error_reporter;
+
+  pinMode(P1_11, INPUT_PULLUP);
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // Map the model into a usable data structure. This doesn't involve any
   // copying or parsing, it's a very lightweight operation.
@@ -111,6 +115,8 @@ void setup() {
 
   // Get information about the memory area to use for the model's input.
   model_input = interpreter->input(0);
+  model_output = interpreter->output(0);
+
   if ((model_input->dims->size != 4) || 
       (model_input->dims->data[0] != 1) ||
       (model_input->dims->data[1] != kFeatureSliceCount) ||
@@ -119,6 +125,17 @@ void setup() {
     error_reporter->Report("Bad input tensor parameters in model");
     return;
   }
+
+  error_reporter->Report("Input Tensor (%d,%d,%d) %d", 
+      model_input->dims->data[0],
+      model_input->dims->data[1],
+      model_input->dims->data[2],
+      model_input->type);
+
+  error_reporter->Report("Output Tensor (%d,%d) %d", 
+      model_input->dims->data[0],
+      model_input->dims->data[1],
+      model_output->type);
 
   // Prepare to access the audio spectrograms from a microphone or other source
   // that will provide the inputs to the neural network.
@@ -153,30 +170,43 @@ void loop() {
     return;
   }
 
-  error_reporter->Report("i"); // Mark inference successful
-  // Run the model on the spectrogram input and make sure it succeeds.
-  TfLiteStatus invoke_status = interpreter->Invoke();
-  if (invoke_status != kTfLiteOk) {
-    error_reporter->Report("Invoke failed");
-    return;
-  }
-  error_reporter->Report("I"); // Mark inference successful
-
-  // Obtain a pointer to the output tensor
-  TfLiteTensor* output = interpreter->output(0);
   // Determine whether a command was recognized based on the output of inference
   const char* found_command = nullptr;
   uint8_t score = 0;
   bool is_new_command = false;
-  TfLiteStatus process_status = recognizer->ProcessLatestResults(
-      output, current_time, &found_command, &score, &is_new_command);
-  if (process_status != kTfLiteOk) {
-    error_reporter->Report("RecognizeCommands::ProcessLatestResults() failed");
-    return;
+
+  int buttonPress = digitalRead(P1_11);
+
+  if (buttonPress == LOW) {
+
+    digitalWrite(LED_BUILTIN, HIGH);
+
+    error_reporter->Report("i"); // Mark inference successful
+    // Run the model on the spectrogram input and make sure it succeeds.
+    TfLiteStatus invoke_status = interpreter->Invoke();
+    if (invoke_status != kTfLiteOk) {
+      error_reporter->Report("Invoke failed");
+      return;
+    }
+    error_reporter->Report("I"); // Mark inference successful
+
+    // Obtain a pointer to the output tensor
+    TfLiteTensor* output = interpreter->output(0);
+
+    TfLiteStatus process_status = recognizer->ProcessLatestResults(
+        output, current_time, &found_command, &score, &is_new_command);
+    
+    if (process_status != kTfLiteOk) {
+      error_reporter->Report("RecognizeCommands::ProcessLatestResults() failed");
+      return;
+    }
   }
+
   // Do something based on the recognized command. The default implementation
   // just prints to the error console, but you should replace this with your
   // own function for a real application.
   RespondToCommand(error_reporter, current_time, found_command, score,
-                   is_new_command);
+                  is_new_command);
+
+  digitalWrite(LED_BUILTIN, LOW);
 }
